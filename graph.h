@@ -8,10 +8,10 @@ public:
 	Graph() = default;
 	Graph(const Graph&);
 	Graph& operator=(const Graph&);
-	Graph(std::initializer_list<std::pair<T, T>>);
+	Graph(std::initializer_list<std::pair<T,T>>);
 	Graph(Graph&&);
 	Graph& operator=(Graph&&);
-	~Graph() {};
+	~Graph();
 
 public:
 	bool operator==(const Graph&) const;
@@ -22,11 +22,11 @@ public:
 public:
 	void insert_vertex(T);
 	void insert_edge(T, T);
-	std::vector<T> get_vertex_set();
-	std::vector<T> get_edge_set();
+	std::vector<T> get_vertex_set() const;
+	std::vector<T> get_edge_set() const;
 	void erase_vertex(T);
-	void erase_edge(T, T);
-	int get_number_of_vertex() const;
+	void erase_edge(T,T);
+	int get_number_of_vertex(T count) const;
 	int find_path(T vertex1, T vertex2);
 	void DFS(T start);
 	void BFS(T start);
@@ -55,11 +55,11 @@ Graph<T>& Graph<T>::operator=(const Graph& ob)
 }
 
 template <typename T>
-Graph<T>::Graph(std::initializer_list<std::pair<T, T>> vertex)
+Graph<T>::Graph(std::initializer_list<std::pair<T,T>> vertex)
 {
-	for (auto it = vertex.begin(); it != vertex.end(); ++it)
+	for (auto it = vertex.begin(); it != vertex.end(); ++it) 
 	{
-		insert_edge(it->first, it->second);
+		insert_edge(it->first,it->second);
 	}
 }
 
@@ -73,16 +73,23 @@ Graph<T>::Graph(Graph&& ob)
 template <typename T>
 Graph<T>& Graph<T>::operator=(Graph&& ob)
 {
-	if (!ob.adj.empty())
+	if (!ob.adj.empty()) 
 	{
 		adj = std::move(ob.adj);
 	}
 
-	if (!ob.visited.empty())
+	if (!ob.visited.empty()) 
 	{
 		visited = std::move(ob.visited);
 	}
 	return *this;
+}
+
+template <typename T>
+Graph<T>::~Graph()
+{
+	adj.clear();
+	visited.clear();
 }
 
 template <typename T>
@@ -100,50 +107,56 @@ std::ostream& operator<<(std::ostream& os, const Graph<T>& ob)
 {
 	for (auto it = ob.adj.begin(); it != ob.adj.end(); ++it)
 	{
-		os << it->first << " ";
-	
+		os << "|" << it->first << "|";
 		for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2)
 		{
-			os << *it2 << " ";
+			if (std::distance(it2, it->second.end()) == 0)
+			{
+				break;
+			}
+			else
+			{
+				os << "->" << "|" << *it2 << "|";
+			}
 		}
-		os << std::endl;
+		os << std::endl << std::endl;
 	}
 	return os;
 }
 
 template <typename T>
-void Graph<T>::insert_vertex(T id)
+void Graph<T>::insert_vertex(T id) 
 {
 	adj.insert(std::pair<T, std::list<T> >(id, {}));
 }
 
 template <typename T>
-void Graph<T>::insert_edge(T vertex1, T vertex2)
+void Graph<T>::insert_edge(T v1, T v2) 
 {
-	if (adj.find(vertex1) != adj.end() && adj.find(vertex2) != adj.end())
+	if (adj.find(v1) != adj.end() && adj.find(v2) != adj.end()) 
 	{
-		adj[vertex1].push_back(vertex2);
+		adj[v1].push_back(v2);
 	}
-	else if (adj.find(vertex1) == adj.end() && adj.find(vertex2) != adj.end())
+	else if(adj.find(v1) == adj.end() && adj.find(v2) != adj.end())
 	{
-		insert_vertex(vertex1);
-		adj[vertex1].push_back(vertex2);
+		insert_vertex(v1);
+		adj[v1].push_back(v2);
 	}
-	else if (adj.find(vertex1) != adj.end() && adj.find(vertex2) == adj.end())
+	else if (adj.find(v1) != adj.end() && adj.find(v2) == adj.end())
 	{
-		insert_vertex(vertex2);
-		adj[vertex1].push_back(vertex2);
+		insert_vertex(v2);
+		adj[v1].push_back(v2);
 	}
 	else
 	{
-		insert_vertex(vertex1);
-		insert_vertex(vertex2);
-		adj[vertex1].push_back(vertex2);
+		insert_vertex(v1);
+		insert_vertex(v2);
+		adj[v1].push_back(v2);
 	}
 }
 
 template <typename T>
-std::vector<T> Graph<T>::get_vertex_set()
+std::vector<T> Graph<T>::get_vertex_set() const
 {
 	std::vector<T> vec;
 	for (auto& it : adj)
@@ -154,7 +167,7 @@ std::vector<T> Graph<T>::get_vertex_set()
 }
 
 template <typename T>
-std::vector<T> Graph<T>::get_edge_set()
+std::vector<T> Graph<T>::get_edge_set() const
 {
 	std::vector<T> vec;
 	for (auto it = adj.begin(); it != adj.end(); ++it)
@@ -168,24 +181,19 @@ std::vector<T> Graph<T>::get_edge_set()
 }
 
 template <typename T>
-void Graph<T>::erase_vertex(T vertex)
+void Graph<T>::erase_vertex(T v)
 {
-	if(adj.find(vertex) == adj.end()) 
-	{
-		std::cout << "This Value Not Found";
-		return;
-	}
-	adj.erase(vertex);
+	adj.erase(v);
 
 	for (auto it = adj.begin(); it != adj.end(); ++it)
 	{
 		for (auto it2 = it->second.begin(); it2 != it->second.end();)
 		{
-			if (*it2 == vertex)
+			if (*it2 == v) 
 			{
-				it2 = it->second.erase(it2);
+				it2 = it->second.erase(it2);	
 			}
-			else
+			else 
 			{
 				++it2;
 			}
@@ -216,16 +224,22 @@ int Graph<T>::find_path(T vertex1, T vertex2)
 
 	if (!adj.empty())//BFS traversal
 	{
+		if (adj.find(vertex1) == adj.end() || adj.find(vertex2) != adj.end())
+		{
+			std::cout << "Invalid vertex: ";
+			return -1;
+		}
+
 		visited[vertex1] = true;
 		std::queue<int> q;
-		if (adj.find(vertex1) != adj.end() && adj.find(vertex2) != adj.end())
+		if (adj.find(vertex1) != adj.end() && adj.find(vertex2) != adj.end()) 
 		{
 			q.push(vertex1);
 		}
 		while (!q.empty())
 		{
 			int front = q.front();
-			if (front == vertex2)
+			if (front == vertex2) 
 			{
 				break;
 			}
@@ -246,18 +260,17 @@ int Graph<T>::find_path(T vertex1, T vertex2)
 }
 
 template <typename T>
-int Graph<T>::get_number_of_vertex() const
+int Graph<T>::get_number_of_vertex(T v) const
 {
 	return adj.size();
 }
-
 
 template <typename T>
 void Graph<T>::DFS(T start)
 {
 	if (adj.find(start) == adj.end())
 	{
-		std::cout << "Invalid Vertex";
+		std::cout << "Wrong initial value: ";
 		return;
 	}
 
@@ -265,19 +278,18 @@ void Graph<T>::DFS(T start)
 	{
 		for (auto& it : visited)
 		{
-			if (it.second)
+			if (it.second) 
 			{
 				it.second = false;
 			}
 		}
 	}
+
 	if (!adj.empty())
 	{
 		std::stack<int> s;
-		if (adj.find(start) != adj.end())
-		{
-			s.push(start);
-		}
+		s.push(start);
+
 		while (!s.empty())
 		{
 			int top = s.top();
@@ -291,13 +303,13 @@ void Graph<T>::DFS(T start)
 
 			for (auto it = adj[top].begin(); it != adj[top].end(); ++it)
 			{
-				if (!visited[*it])
+				if (!visited[*it]) 
 				{
 					s.push(*it);
 				}
 			}
 		}
-		/*visited[start] = true;//recursive
+		/*visited[start] = true; //recursive
 		std::cout << start << " ";
 
 		for (auto it = adj[start].begin(); it != adj[start].end(); ++it)
@@ -314,7 +326,7 @@ void Graph<T>::BFS(T start)
 {
 	if (adj.find(start) == adj.end())
 	{
-		std::cout << "Invalid Vertex";
+		std::cout << "Wrong initial value: ";
 		return;
 	}
 
@@ -322,19 +334,18 @@ void Graph<T>::BFS(T start)
 	{
 		for (auto& it : visited)
 		{
-			if (it.second) {
+			if (it.second) 
+			{
 				it.second = false;
 			}
-		}
+		}	
 	}
 	if (!adj.empty())
 	{
 		visited[start] = true;
 		std::queue<int> q;
-		if (adj.find(start) != adj.end())
-		{
-			q.push(start);
-		}
+		q.push(start);
+
 		while (!q.empty())
 		{
 			int front = q.front();
